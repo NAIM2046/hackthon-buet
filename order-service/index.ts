@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // URL ফিক্স: localhost এর বদলে 127.0.0.1 (Node এ সমস্যা এড়াতে)
-const INVENTORY_URL = process.env.INVENTORY_URL || "http://127.0.0.1:4000/update-inventory";
+const INVENTORY_URL = process.env.INVENTORY_URL || "https://valerix-inventory.onrender.com/update-inventory";
 
 // --- RETRY LOGIC ---
 async function callInventory(payload: any, retries = 3) {
