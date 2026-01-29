@@ -12,3 +12,16 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Inventory {
+  id        Int    @id @default(autoincrement())
+  productId String @unique
+  quantity  Int
+}
+
+// --- আপডেটেড মডেল ---
+model IdempotencyLog {
+  id        String   @id @default(uuid()) // ডাটাবেসের নিজস্ব ইউনিক ID
+  orderId   String   @unique             // অর্ডার ID (যা আমরা চেক করব)
+  createdAt DateTime @default(now())
+}

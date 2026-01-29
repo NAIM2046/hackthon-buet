@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # ১. Inventory Database
+  db-inventory:
+    image: postgres:15-alpine
+    container_name: valerix_inventory_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: inventory_db
+    ports:
+      - "5433:5432" 
+    networks:
+      - valerix-network
+
+  # ২. Inventory Service (App)
+  inventory-service:
+    build: ./inventory-service
+    container_name: valerix_inventory_service
+    ports:
+      - "4000:4000"
+    environment:
+     
+      DATABASE_URL: "postgresql://user:password@db-inventory:5432/inventory_db?schema=public"
+    depends_on:
+      - db-inventory
+    networks:
+      - valerix-network
+
+  # ৩. Order Database
+  db-order:
+    image: postgres:15-alpine
+    container_name: valerix_order_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: order_db
+    ports:
+      - "5434:5432"
+    networks:
+      - valerix-network
+
+  # ৪. Order Service (App)
+  order-service:
+    build: ./order-service
+    container_name: valerix_order_service
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://user:password@db-order:5432/order_db?schema=public"
+      INVENTORY_URL: "http://inventory-service:4000/update-inventory"
+    depends_on:
+      - db-order
+      - inventory-service
+    networks:
+      - valerix-network
+
+networks:
+  valerix-network:
+    driver: bridge

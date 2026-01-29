@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<body style="text-align:center; padding:50px; font-family:sans-serif;">
+    <h1>📦 Valerix Order System</h1>
+    <button id="btn" onclick="buy()" style="padding:10px 20px; font-size:18px;">Buy Item</button>
+    <h3 id="status"></h3>
+
+    <script>
+        async function buy() {
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            
+            btn.disabled = true;
+            status.innerHTML = "⏳ Processing...";
+            status.style.color = "orange";
+
+            // Unique ID তৈরি
+            const orderId = 'ORD-' + Date.now();
+
+            try {
+                const res = await fetch('http://localhost:3000/create-order', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ orderId, productId: "item-123", quantity: 1 })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    status.innerHTML = `✅ Success! ID: ${data.orderId}`;
+                    status.style.color = "green";
+                } else {
+                    status.innerHTML = `❌ Failed: ${data.error}`;
+                    status.style.color = "red";
+                }
+            } catch (e) {
+                status.innerHTML = "❌ Network Error";
+            }
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
