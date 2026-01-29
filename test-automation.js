@@ -1,7 +1,7 @@
 // এই স্ক্রিপ্ট চালানোর জন্য টার্মিনালে লিখুন: node test-automation.js
 
 // ১. আপনার টার্গেট URL সেট করুন (Render বা Localhost)
- const TARGET_URL = "http://localhost:3000/create-order"; // লোকাল টেস্টিং
+ const TARGET_URL = "https://valerix-order.onrender.com/create-order"; // লোকাল টেস্টিং
 //const TARGET_URL = "https://valerix-order.onrender.com/create-order"; // ক্লাউড টেস্টিং (আপনার URL বসান)
 
 const TOTAL_REQUESTS = 20; // একসাথে ২০ জন ইউজার
