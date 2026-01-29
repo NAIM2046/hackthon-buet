@@ -1,41 +1,112 @@
 <!DOCTYPE html>
-<html>
-<body style="text-align:center; padding:50px; font-family:sans-serif;">
-    <h1>📦 Valerix Order System</h1>
-    <button id="btn" onclick="buy()" style="padding:10px 20px; font-size:18px;">Buy Item</button>
-    <h3 id="status"></h3>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valerix Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        .dashboard { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; width: 200px; }
+        /* স্ট্যাটাস লাইট */
+        .status-light { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto; transition: background 0.3s; }
+        .green { background-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .red { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 5px; }
+        button:disabled { background: #bdc3c7; }
+        #logs { margin-top: 20px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; }
+    </style>
+</head>
+<body>
+
+    <h1>Valerix Order Dashboard</h1>
+
+    <div class="dashboard">
+        <div class="card">
+            <h3>System Status</h3>
+            <div id="healthLight" class="status-light green"></div>
+            <p id="avgTime">Avg Latency: 0ms</p>
+        </div>
+    </div>
+
+    <button onclick="placeOrder()" id="btn">Buy Item (Trigger Order)</button>
+
+    <div id="logs"></div>
 
     <script>
-        async function buy() {
+        // আপনার Render URL এখানে বসান
+        const API_URL = "http://localhost:3000/create-order"; 
+        
+        // ৩০ সেকেন্ডের উইন্ডো ট্র্যাক করার জন্য অ্যারে
+        let responseTimes = []; 
+
+        async function placeOrder() {
             const btn = document.getElementById('btn');
-            const status = document.getElementById('status');
+            const logs = document.getElementById('logs');
+            const orderId = "ORD-" + Date.now();
             
             btn.disabled = true;
-            status.innerHTML = "⏳ Processing...";
-            status.style.color = "orange";
+            logs.innerHTML = `Processing ${orderId}...<br>` + logs.innerHTML;
 
-            // Unique ID তৈরি
-            const orderId = 'ORD-' + Date.now();
+            const startTime = Date.now(); // টাইমার শুরু
 
             try {
-                const res = await fetch('http://localhost:3000/create-order', {
+                const res = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ orderId, productId: "item-123", quantity: 1 })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        userId: "user_dashboard",
+                        productId: "item-125",
+                        quantity: 1,
+                        price: 100
+                    })
                 });
+
+                const endTime = Date.now(); // টাইমার শেষ
+                const duration = endTime - startTime;
+                
+                // ড্যাশবোর্ড আপডেট করা
+                updateDashboard(duration);
 
                 const data = await res.json();
                 if (res.ok) {
-                    status.innerHTML = `✅ Success! ID: ${data.orderId}`;
-                    status.style.color = "green";
+                    logs.innerHTML = `✅ Success (${duration}ms): ${data.orderId}<br>` + logs.innerHTML;
                 } else {
-                    status.innerHTML = `❌ Failed: ${data.error}`;
-                    status.style.color = "red";
+                    logs.innerHTML = `❌ Failed (${duration}ms): ${data.error}<br>` + logs.innerHTML;
                 }
-            } catch (e) {
-                status.innerHTML = "❌ Network Error";
+
+            } catch (err) {
+                const duration = Date.now() - startTime;
+                updateDashboard(duration);
+                logs.innerHTML = `⚠️ Network Error (${duration}ms)<br>` + logs.innerHTML;
             }
+
             btn.disabled = false;
+        }
+
+        function updateDashboard(newTime) {
+            const now = Date.now();
+            // নতুন টাইম এবং বর্তমান সময় রেকর্ড করা
+            responseTimes.push({ time: newTime, timestamp: now });
+
+            // ৩০ সেকেন্ডের পুরনো ডাটা মুছে ফেলা (Rolling Window)
+            responseTimes = responseTimes.filter(r => now - r.timestamp < 30000);
+
+            // গড় সময় বের করা
+            const total = responseTimes.reduce((acc, curr) => acc + curr.time, 0);
+            const avg = responseTimes.length > 0 ? Math.round(total / responseTimes.length) : 0;
+
+            document.getElementById('avgTime').innerText = `Avg Latency: ${avg}ms`;
+            const light = document.getElementById('healthLight');
+
+            // লজিক: যদি গড় সময় ১০০০ms (১ সেকেন্ড) এর বেশি হয় -> লাল, নাহলে সবুজ
+            if (avg > 1000) {
+                light.className = "status-light red";
+            } else {
+                light.className = "status-light green";
+            }
         }
     </script>
 </body>

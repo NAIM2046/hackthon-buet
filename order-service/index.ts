@@ -84,4 +84,14 @@ app.post('/create-order', async (req: Request, res: Response): Promise<any> => {
     }
 });
 
+app.get('/health', async (req, res) => {
+    try {
+        // ডাটাবেস চেক
+        await prisma.order.findFirst();
+        res.status(200).json({ status: "UP", database: "Connected" });
+    } catch (e) {
+        res.status(500).json({ status: "DOWN", database: "Disconnected" });
+    }
+});
+
 app.listen(3000, () => console.log("Order Service running on 3000"));

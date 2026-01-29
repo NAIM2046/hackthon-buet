@@ -92,4 +92,14 @@ app.get('/seed-product', async (req, res) => {
     }
 });
 
+app.get('/health', async (req, res) => {
+    try {
+        // ডাটাবেস চেক: একটা ডামি কুয়েরি চালানো
+        await prisma.inventory.findFirst();
+        res.status(200).json({ status: "UP", database: "Connected" });
+    } catch (e) {
+        res.status(500).json({ status: "DOWN", database: "Disconnected" });
+    }
+});
+
 app.listen(4000, () => console.log("Inventory Service running on 4000"));
