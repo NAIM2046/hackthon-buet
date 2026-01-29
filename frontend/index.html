@@ -35,21 +35,23 @@
     <div id="logs"></div>
 
     <script>
-        // আপনার Render URL এখানে বসান
+        // ✅ আপনার Render Backend URL
         const API_URL = "https://valerix-order.onrender.com/create-order"; 
         
-        // ৩০ সেকেন্ডের উইন্ডো ট্র্যাক করার জন্য অ্যারে
         let responseTimes = []; 
 
         async function placeOrder() {
             const btn = document.getElementById('btn');
-            const logs = document.getElementById('logs');
             const orderId = "ORD-" + Date.now();
             
+            // ১. বাটন ডিজেবল
             btn.disabled = true;
-            logs.innerHTML = `Processing ${orderId}...<br>` + logs.innerHTML;
+            btn.innerText = "Processing...";
+            
+            // ২. লগ তৈরি (Processing...) - এবং এটার একটা ID রাখা
+            const logId = createLogEntry(`⏳ Processing ${orderId}...`, 'black');
 
-            const startTime = Date.now(); // টাইমার শুরু
+            const startTime = Date.now(); 
 
             try {
                 const res = await fetch(API_URL, {
@@ -57,51 +59,76 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         orderId: orderId,
-                        userId: "user_dashboard",
-                        productId: "item-125",
+                        userId: "demo_user",
+                        productId: "item-123",
                         quantity: 1,
                         price: 100
                     })
                 });
 
-                const endTime = Date.now(); // টাইমার শেষ
+                const endTime = Date.now();
                 const duration = endTime - startTime;
-                
-                // ড্যাশবোর্ড আপডেট করা
+                const data = await res.json();
+
                 updateDashboard(duration);
 
-                const data = await res.json();
+                // ৩. পুরনো লগটিকেই আপডেট করা (নতুন লাইন তৈরি হবে না)
                 if (res.ok) {
-                    logs.innerHTML = `✅ Success (${duration}ms): ${data.orderId}<br>` + logs.innerHTML;
+                    updateLogEntry(logId, `✅ Success (${duration}ms): Order Placed! ID: ${data.orderId}`, 'log-success');
                 } else {
-                    logs.innerHTML = `❌ Failed (${duration}ms): ${data.error}<br>` + logs.innerHTML;
+                    updateLogEntry(logId, `❌ Failed (${duration}ms): ${data.error}`, 'log-fail');
                 }
 
             } catch (err) {
                 const duration = Date.now() - startTime;
                 updateDashboard(duration);
-                logs.innerHTML = `⚠️ Network Error (${duration}ms)<br>` + logs.innerHTML;
+                updateLogEntry(logId, `⚠️ Network Error (${duration}ms). Check logs.`, 'log-warn');
+                console.error(err);
             }
 
             btn.disabled = false;
+            btn.innerText = "🛒 Buy Item (Trigger Order)";
+        }
+
+        // লগ এন্ট্রি তৈরি করা এবং সেই এলিমেন্টটি রিটার্ন করা
+        function createLogEntry(message, className) {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            const uniqueId = 'log-' + Date.now(); // ইউনিক আইডি
+            div.id = uniqueId;
+            div.className = `log-entry ${className}`;
+            div.innerText = message;
+            logs.prepend(div);
+            return uniqueId; // আইডি রিটার্ন করছি যাতে পরে আপডেট করা যায়
+        }
+
+        // পুরনো লগ আপডেট করার ফাংশন
+        function updateLogEntry(id, newMessage, newClass) {
+            const logDiv = document.getElementById(id);
+            if (logDiv) {
+                logDiv.innerText = newMessage;
+                logDiv.className = `log-entry ${newClass}`;
+                
+                // একটু এনিমেশন ইফেক্ট (হলুদ ব্যাকগ্রাউন্ড ফ্ল্যাশ)
+                logDiv.style.backgroundColor = "#fff3cd";
+                setTimeout(() => {
+                    logDiv.style.backgroundColor = "transparent";
+                    logDiv.style.transition = "background-color 0.5s";
+                }, 200);
+            }
         }
 
         function updateDashboard(newTime) {
             const now = Date.now();
-            // নতুন টাইম এবং বর্তমান সময় রেকর্ড করা
             responseTimes.push({ time: newTime, timestamp: now });
-
-            // ৩০ সেকেন্ডের পুরনো ডাটা মুছে ফেলা (Rolling Window)
             responseTimes = responseTimes.filter(r => now - r.timestamp < 30000);
 
-            // গড় সময় বের করা
             const total = responseTimes.reduce((acc, curr) => acc + curr.time, 0);
             const avg = responseTimes.length > 0 ? Math.round(total / responseTimes.length) : 0;
 
             document.getElementById('avgTime').innerText = `Avg Latency: ${avg}ms`;
             const light = document.getElementById('healthLight');
 
-            // লজিক: যদি গড় সময় ১০০০ms (১ সেকেন্ড) এর বেশি হয় -> লাল, নাহলে সবুজ
             if (avg > 1000) {
                 light.className = "status-light red";
             } else {
