@@ -3,7 +3,7 @@ import cors from 'cors';
 import { prisma } from './lib/prisma';
 
 
-// সরাসরি এখানেই Prisma কানেক্ট করছি (lib ফোল্ডার লাগবে না)
+
 
 const app = express();
 
@@ -20,14 +20,14 @@ const gremlinLatency = async () => {
 };
 
 app.post('/update-inventory', async (req: Request, res: Response): Promise<any> => {
-    // 1. Gremlin চালু
+   
     await gremlinLatency();
 
     const { productId, quantity, orderId } = req.body;
     console.log(`📦 Inventory Request for: ${orderId}`);
 
     try {
-        // --- IDEMPOTENCY CHECK ---
+       
         const existing = await prisma.idempotencyLog.findUnique({
             where: { orderId: orderId } 
         });
@@ -39,27 +39,27 @@ app.post('/update-inventory', async (req: Request, res: Response): Promise<any> 
 
         // --- TRANSACTION ---
         await prisma.$transaction(async (tx) => {
-            // ১. স্টক চেক
+          
             const product = await tx.inventory.findUnique({ where: { productId } });
             
-            // যদি প্রোডাক্ট না থাকে বা স্টক কম থাকে
+           
             if (!product || product.quantity < quantity) {
                 throw new Error("STOCK_LOW");
             }
 
-            // ২. স্টক কমানো
+           
             await tx.inventory.update({
                 where: { productId },
                 data: { quantity: { decrement: quantity } }
             });
 
-            // ৩. লগ তৈরি
+          
             await tx.idempotencyLog.create({
                 data: { orderId: orderId }
             });
         });
 
-        // --- SIMULATED CRASH ---
+      
         if (Math.random() < 0.3) {
             console.log(`👻 CRASH after commit! (${orderId})`);
             return res.status(500).json({ error: "Simulated Crash" });
@@ -77,12 +77,12 @@ app.post('/update-inventory', async (req: Request, res: Response): Promise<any> 
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
-// --- SEED ENDPOINT (এটা শুধু প্রোডাক্ট অ্যাড করার জন্য) ---
+
 app.get('/seed-product', async (req, res) => {
     try {
         await prisma.inventory.create({
             data: {
-                productId: "item-125", // ফ্রন্টএন্ডের সাথে মিল থাকতে হবে
+                productId: "item-125", 
                 quantity: 100
             }
         });
@@ -94,7 +94,7 @@ app.get('/seed-product', async (req, res) => {
 
 app.get('/health', async (req, res) => {
     try {
-        // ডাটাবেস চেক: একটা ডামি কুয়েরি চালানো
+        
         await prisma.inventory.findFirst();
         res.status(200).json({ status: "UP", database: "Connected" });
     } catch (e) {

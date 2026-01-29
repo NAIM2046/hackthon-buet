@@ -3,7 +3,7 @@ import cors from 'cors';
 import axios from 'axios';
 import { prisma } from './lib/prisma';
 import { OrderStatus } from './generated/prisma/client';
-// সরাসরি Prisma Client এবং Enum ইমপোর্ট
+
 
 
 
@@ -12,7 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// URL ফিক্স: localhost এর বদলে 127.0.0.1 (Node এ সমস্যা এড়াতে)
+
 const INVENTORY_URL = process.env.INVENTORY_URL || "https://valerix-inventory.onrender.com/update-inventory";
 
 // --- RETRY LOGIC ---
@@ -37,7 +37,7 @@ app.post('/create-order', async (req: Request, res: Response): Promise<any> => {
     try {
         const totalAmount = price ? (price * quantity) : 0;
 
-        // ১. Enum ব্যবহার করে অর্ডার তৈরি
+     
         console.log("1. Saving to DB (PENDING)...");
         await prisma.order.create({
             data: {
@@ -51,11 +51,11 @@ app.post('/create-order', async (req: Request, res: Response): Promise<any> => {
             }
         });
 
-        // ২. ইনভেন্টরি কল
+     
         console.log("2. Calling Inventory...");
         await callInventory({ orderId, productId, quantity });
 
-        // ৩. সফল হলে স্ট্যাটাস আপডেট
+       
         console.log("3. Updating to CONFIRMED...");
         await prisma.order.update({
             where: { orderId },
@@ -68,9 +68,8 @@ app.post('/create-order', async (req: Request, res: Response): Promise<any> => {
     } catch (e: any) {
         // --- CRITICAL FIX: PRINT THE REAL ERROR ---
         console.error(`❌ FAILED DETAILED LOG:`, e); 
-        // এই লগটি টার্মিনালে চেক করুন, এটি বলে দেবে আসল সমস্যা কী
+        
 
-        // ৪. ফেইল হলে স্ট্যাটাস আপডেট
         try {
             await prisma.order.update({
                 where: { orderId },
@@ -86,7 +85,7 @@ app.post('/create-order', async (req: Request, res: Response): Promise<any> => {
 
 app.get('/health', async (req, res) => {
     try {
-        // ডাটাবেস চেক
+       
         await prisma.order.findFirst();
         res.status(200).json({ status: "UP", database: "Connected" });
     } catch (e) {

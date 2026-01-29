@@ -18,33 +18,33 @@ The system is decoupled into two autonomous services to handle high concurrency 
 ```mermaid
 graph TD
     %% Client Side
-    User([👤 User / Dashboard])
+    User([User / Dashboard])
     
     %% Cloud Environment
-    subgraph Render_Cloud [☁️ Render Cloud Platform]
+    subgraph Render_Cloud [Render Cloud Platform]
         style Render_Cloud fill:#f9f9f9,stroke:#333,stroke-width:2px
         
         %% Order Microservice
-        subgraph Order_Domain [📦 Order Domain]
+        subgraph Order_Domain [Order Domain]
             style Order_Domain fill:#e1f5fe,stroke:#0277bd
             OS[Order Service]
             ODB[(Order DB)]
-            OS <-->|Prisma Client| ODB
+            OS --- ODB
         end
 
         %% Inventory Microservice
-        subgraph Inventory_Domain [🏭 Inventory Domain]
+        subgraph Inventory_Domain [Inventory Domain]
             style Inventory_Domain fill:#e8f5e9,stroke:#2e7d32
             IS[Inventory Service]
             IDB[(Inventory DB)]
-            IS <-->|Prisma Client| IDB
+            IS --- IDB
         end
     end
 
     %% Connections
-    User -->|1. POST /create-order| OS
-    OS -->|2. REST API Check Stock| IS
-    IS -.->|3.  Gremlin Delay (0-5s)| OS
+    User -->|1. POST create-order| OS
+    OS -->|2. Check Stock| IS
+    IS -.->|3. Gremlin Delay| OS
     IS -->|4. Update Stock| IDB
     
     %% Styling for nodes
